@@ -13,10 +13,12 @@ app = Flask(__name__)
 
 # Configuración de la base de datos
 DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'clinica_pacientes',
-    'user': 'postgres',
-    'password': 'postgres'
+    "dbname": "Example",
+    "user": "Example",
+    "password": "Example",
+    "host": "localhost",
+    "port": "5432"
+    
 }
 
 def get_db_connection():
@@ -25,7 +27,7 @@ def get_db_connection():
 
 @app.route('/')
 def home():
-    return render_template('dashboard.html')
+    return render_template('base.html')
 
 @app.route('/dashboard')
 def dashboard():
@@ -146,31 +148,51 @@ def reporte3():
         ORDER BY mes, fd.tipo_concepto
     """)
     
-    cur.execute(query, params)
-    results = cur.fetchall()
-    
-    cur.close()
-    conn.close()
-    
-    meses = sorted(list(set([row[1].strftime('%Y-%m') for row in results])))
-    conceptos = sorted(list(set([row[0] for row in results])))
-    
-    datasets = []
-    for concepto in conceptos:
-        data = []
-        for mes in meses:
-            total = next((float(row[2]) for row in results if row[0] == concepto and row[1].strftime('%Y-%m') == mes), 0)
-            data.append(total)
-        datasets.append({
-            'label': concepto,
-            'data': data
+    try:
+        cur.execute(query, params)
+        results = cur.fetchall()
+        
+        # Procesamiento de resultados
+        meses = sorted(list(set([row[1].strftime('%Y-%m') for row in results])))
+        conceptos = sorted(list(set([row[0] for row in results])))
+        
+        datasets = []
+        for concepto in conceptos:
+            data = []
+            for mes in meses:
+                # Buscar el total para este concepto y mes
+                total = 0
+                for row in results:
+                    if row[0] == concepto and row[1].strftime('%Y-%m') == mes:
+                        total = float(row[2])
+                        break
+                data.append(total)
+            
+            datasets.append({
+                'label': concepto,
+                'data': data,
+                'borderColor': get_random_color(),
+                'backgroundColor': get_random_color(0.2)
+            })
+        
+        return jsonify({
+            'labels': meses,
+            'datasets': datasets,
+            'type': 'line'
         })
-    
-    return jsonify({
-        'labels': meses,
-        'datasets': datasets,
-        'type': 'line'
-    })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+def get_random_color(opacity=1):
+    import random
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    return f'rgba({r}, {g}, {b}, {opacity})'
 
 
 @app.route('/api/reporte4', methods=['GET'])
@@ -188,30 +210,38 @@ def reporte4():
     
     query = sql.SQL("""
         SELECT 
-            SUBSTRING(d.diagnostico FROM 1 FOR 30) as diagnostico,
+            CASE 
+                WHEN LENGTH(d.diagnostico) > 30 THEN SUBSTRING(d.diagnostico FROM 1 FOR 30) || '...'
+                ELSE d.diagnostico
+            END as diagnostico,
             COUNT(*) as cantidad
         FROM diagnosticos d
         JOIN historiales_medicos hm ON d.id_historial = hm.id_historial
         JOIN pacientes p ON hm.id_paciente = p.id_paciente
         WHERE d.fecha_diagnostico BETWEEN %(fecha_inicio)s AND %(fecha_fin)s
-        AND EXTRACT(YEAR FROM AGE(p.fecha_nacimiento)) BETWEEN %(min_edad)s AND %(max_edad)s
+        AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.fecha_nacimiento)) BETWEEN %(min_edad)s AND %(max_edad)s
         AND p.genero LIKE %(genero)s
         GROUP BY diagnostico
         ORDER BY cantidad DESC
         LIMIT 10
     """)
     
-    cur.execute(query, params)
-    results = cur.fetchall()
-    
-    cur.close()
-    conn.close()
-    
-    return jsonify({
-        'labels': [row[0] for row in results],
-        'data': [row[1] for row in results],
-        'type': 'horizontalBar'
-    })
+    try:
+        cur.execute(query, params)
+        results = cur.fetchall()
+        
+        return jsonify({
+            'labels': [row[0] for row in results],
+            'data': [row[1] for row in results],
+            'type': 'bar',
+            'backgroundColor': 'rgba(54, 162, 235, 0.5)'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
 
 
 @app.route('/api/reporte5', methods=['GET'])
@@ -365,9 +395,5 @@ def export_pdf():
     
     return jsonify({'pdf_url': f"/{pdf_path}"})
 
-if __name__ == '__main__':
-    if not os.path.exists('static/img'):
-        os.makedirs('static/img')
-    if not os.path.exists('static/pdf'):
-        os.makedirs('static/pdf')
-    app.run(debug=True)
+
+app.run(debug=True)

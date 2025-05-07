@@ -1,119 +1,254 @@
-{% extends "base.html" %}
-
-{% block title %}Reportes{% endblock %}
-
-{% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2 class="report-title">Reportes Clínicos</h2>
-        <p class="text-muted">Seleccione un reporte para visualizar los datos</p>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-3">
-        <div class="list-group">
-            <button class="list-group-item list-group-item-action report-btn active" data-report="1">
-                <i class="bi bi-people-fill me-2"></i>Pacientes por género
-            </button>
-            <button class="list-group-item list-group-item-action report-btn" data-report="2">
-                <i class="bi bi-calendar-check me-2"></i>Citas por médico
-            </button>
-            <button class="list-group-item list-group-item-action report-btn" data-report="3">
-                <i class="bi bi-cash-stack me-2"></i>Ingresos por concepto
-            </button>
-            <button class="list-group-item list-group-item-action report-btn" data-report="4">
-                <i class="bi bi-clipboard2-pulse me-2"></i>Diagnósticos comunes
-            </button>
-            <button class="list-group-item list-group-item-action report-btn" data-report="5">
-                <i class="bi bi-clipboard2-plus me-2"></i>Exámenes realizados
-            </button>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Clínica</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="report-title">Reportes Clínicos</h2>
+            <p class="text-muted">Seleccione un reporte para visualizar los datos</p>
         </div>
     </div>
-    
-    <div class="col-md-9">
-        <!-- Filtros del reporte -->
-        <div class="filter-section">
-            <h5 id="report-title-1" class="d-none">Pacientes por género</h5>
-            <h5 id="report-title-2" class="d-none">Citas por médico y estado</h5>
-            <h5 id="report-title-3" class="d-none">Ingresos por concepto</h5>
-            <h5 id="report-title-4" class="d-none">Diagnósticos más comunes</h5>
-            <h5 id="report-title-5" class="d-none">Exámenes realizados</h5>
-            
-            <form id="report-form-1" class="report-form">
-                <div class="row">
-                    <div class="col-md-4">
-                        <label for="fecha-inicio-1" class="form-label">Fecha Inicio</label>
-                        <input type="date" class="form-control date-input" id="fecha-inicio-1" name="fecha_inicio">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="fecha-fin-1" class="form-label">Fecha Fin</label>
-                        <input type="date" class="form-control date-input" id="fecha-fin-1" name="fecha_fin">
-                    </div>
-                    <div class="col-md-2">
-                        <label for="min-edad-1" class="form-label">Edad Mín</label>
-                        <input type="number" class="form-control" id="min-edad-1" name="min_edad" value="0">
-                    </div>
-                    <div class="col-md-2">
-                        <label for="max-edad-1" class="form-label">Edad Máx</label>
-                        <input type="number" class="form-control" id="max-edad-1" name="max_edad" value="120">
-                    </div>
-                </div>
-                <div class="mt-3 text-end">
-                    <button type="button" class="btn btn-primary" onclick="loadReport(1)">
-                        <i class="bi bi-arrow-clockwise"></i> Actualizar
-                    </button>
-                </div>
-            </form>
-            
-            <form id="report-form-2" class="report-form d-none">
-                <div class="row">
-                    <div class="col-md-3">
-                        <label for="fecha-inicio-2" class="form-label">Fecha Inicio</label>
-                        <input type="date" class="form-control date-input" id="fecha-inicio-2" name="fecha_inicio">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="fecha-fin-2" class="form-label">Fecha Fin</label>
-                        <input type="date" class="form-control date-input" id="fecha-fin-2" name="fecha_fin">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="medico-2" class="form-label">Médico</label>
-                        <select class="form-select medico-select" id="medico-2" name="medico_id">
-                            <option value="%">Todos</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="estado-2" class="form-label">Estado</label>
-                        <select class="form-select" id="estado-2" name="estado">
-                            <option value="%">Todos</option>
-                            <option value="programada">Programada</option>
-                            <option value="completada">Completada</option>
-                            <option value="cancelada">Cancelada</option>
-                            <option value="no_asistio">No Asistió</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-3 text-end">
-                    <button type="button" class="btn btn-primary" onclick="loadReport(2)">
-                        <i class="bi bi-arrow-clockwise"></i> Actualizar
-                    </button>
-                </div>
-            </form>
-            
-            <!-- Formularios para otros reportes (similares) -->
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+                <button class="list-group-item list-group-item-action report-btn active" data-report="1">
+                    <i class="bi bi-people-fill me-2"></i>Pacientes por género
+                </button>
+                <button class="list-group-item list-group-item-action report-btn" data-report="2">
+                    <i class="bi bi-calendar-check me-2"></i>Citas por médico
+                </button>
+                <button class="list-group-item list-group-item-action report-btn" data-report="3">
+                    <i class="bi bi-cash-stack me-2"></i>Ingresos por concepto
+                </button>
+                <button class="list-group-item list-group-item-action report-btn" data-report="4">
+                    <i class="bi bi-clipboard2-pulse me-2"></i>Diagnósticos comunes
+                </button>
+                <button class="list-group-item list-group-item-action report-btn" data-report="5">
+                    <i class="bi bi-clipboard2-plus me-2"></i>Exámenes realizados
+                </button>
+            </div>
         </div>
         
-        <!-- Contenedor del reporte -->
-        <div id="report-container-1" class="card p-3"></div>
-        <div id="report-container-2" class="card p-3 d-none"></div>
-        <div id="report-container-3" class="card p-3 d-none"></div>
-        <div id="report-container-4" class="card p-3 d-none"></div>
-        <div id="report-container-5" class="card p-3 d-none"></div>
+        <div class="col-md-9">
+            <!-- Filtros del reporte -->
+            <div class="filter-section">
+                <h5 id="report-title-1">Pacientes por género</h5>
+                <h5 id="report-title-2" class="d-none">Citas por médico y estado</h5>
+                <h5 id="report-title-3" class="d-none">Ingresos por concepto</h5>
+                <h5 id="report-title-4" class="d-none">Diagnósticos más comunes</h5>
+                <h5 id="report-title-5" class="d-none">Exámenes realizados</h5>
+                
+                <!-- Formulario Reporte 1 -->
+                <form id="report-form-1" class="report-form">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="fecha-inicio-1" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control date-input" id="fecha-inicio-1" name="fecha_inicio">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha-fin-1" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control date-input" id="fecha-fin-1" name="fecha_fin">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="min-edad-1" class="form-label">Edad Mín</label>
+                            <input type="number" class="form-control" id="min-edad-1" name="min_edad" value="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="max-edad-1" class="form-label">Edad Máx</label>
+                            <input type="number" class="form-control" id="max-edad-1" name="max_edad" value="120">
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="button" class="btn btn-primary" onclick="loadReport(1)">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Formulario Reporte 2 -->
+                <form id="report-form-2" class="report-form d-none">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="fecha-inicio-2" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control date-input" id="fecha-inicio-2" name="fecha_inicio">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fecha-fin-2" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control date-input" id="fecha-fin-2" name="fecha_fin">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="medico-2" class="form-label">Médico</label>
+                            <select class="form-select medico-select" id="medico-2" name="medico_id">
+                                <option value="%">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="estado-2" class="form-label">Estado</label>
+                            <select class="form-select" id="estado-2" name="estado">
+                                <option value="%">Todos</option>
+                                <option value="programada">Programada</option>
+                                <option value="completada">Completada</option>
+                                <option value="cancelada">Cancelada</option>
+                                <option value="no_asistio">No Asistió</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="button" class="btn btn-primary" onclick="loadReport(2)">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Formulario Reporte 3 -->
+                <form id="report-form-3" class="report-form d-none">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="fecha-inicio-3" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control date-input" id="fecha-inicio-3" name="fecha_inicio">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha-fin-3" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control date-input" id="fecha-fin-3" name="fecha_fin">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tipo-concepto-3" class="form-label">Tipo de Concepto</label>
+                            <select class="form-select" id="tipo-concepto-3" name="tipo_concepto">
+                                <option value="%">Todos</option>
+                                <option value="consulta">Consulta</option>
+                                <option value="examen">Examen</option>
+                                <option value="procedimiento">Procedimiento</option>
+                                <option value="medicamento">Medicamento</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="min-monto-3" class="form-label">Monto Mínimo</label>
+                            <input type="number" class="form-control" id="min-monto-3" name="min_monto" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max-monto-3" class="form-label">Monto Máximo</label>
+                            <input type="number" class="form-control" id="max-monto-3" name="max_monto" value="1000000">
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="button" class="btn btn-primary" onclick="loadReport(3)">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Formulario Reporte 4 -->
+                <form id="report-form-4" class="report-form d-none">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="fecha-inicio-4" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control date-input" id="fecha-inicio-4" name="fecha_inicio">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha-fin-4" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control date-input" id="fecha-fin-4" name="fecha_fin">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="genero-4" class="form-label">Género</label>
+                            <select class="form-select" id="genero-4" name="genero">
+                                <option value="%">Todos</option>
+                                <option value="masculino">Masculino</option>
+                                <option value="femenino">Femenino</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="min-edad-4" class="form-label">Edad Mínima</label>
+                            <input type="number" class="form-control" id="min-edad-4" name="min_edad" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max-edad-4" class="form-label">Edad Máxima</label>
+                            <input type="number" class="form-control" id="max-edad-4" name="max_edad" value="120">
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="button" class="btn btn-primary" onclick="loadReport(4)">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Formulario Reporte 5 -->
+                <form id="report-form-5" class="report-form d-none">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="fecha-inicio-5" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control date-input" id="fecha-inicio-5" name="fecha_inicio">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fecha-fin-5" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control date-input" id="fecha-fin-5" name="fecha_fin">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="medico-5" class="form-label">Médico</label>
+                            <select class="form-select medico-select" id="medico-5" name="medico_id">
+                                <option value="%">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="tipo-examen-5" class="form-label">Tipo de Examen</label>
+                            <select class="form-select" id="tipo-examen-5" name="tipo_examen">
+                                <option value="%">Todos</option>
+                                <option value="laboratorio">Laboratorio</option>
+                                <option value="imagen">Imagen</option>
+                                <option value="funcional">Funcional</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="min-costo-5" class="form-label">Costo Mínimo</label>
+                            <input type="number" class="form-control" id="min-costo-5" name="min_costo" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max-costo-5" class="form-label">Costo Máximo</label>
+                            <input type="number" class="form-control" id="max-costo-5" name="max_costo" value="10000">
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="button" class="btn btn-primary" onclick="loadReport(5)">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Contenedores de reportes -->
+            <div id="report-container-1" class="card p-3 mt-3"></div>
+            <div id="report-container-2" class="card p-3 mt-3 d-none"></div>
+            <div id="report-container-3" class="card p-3 mt-3 d-none"></div>
+            <div id="report-container-4" class="card p-3 mt-3 d-none"></div>
+            <div id="report-container-5" class="card p-3 mt-3 d-none"></div>
+        </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
 <script src="/static/js/reportes.js"></script>
-{% endblock %}
+<script src="/static/js/charts.js"></script>

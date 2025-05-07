@@ -1,138 +1,174 @@
-{% extends "base.html" %}
-
-{% block title %}Dashboard{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Total de Pacientes</h5>
-            </div>
-            <div class="card-body text-center">
-                <h3 id="total-pacientes" class="display-4">0</h3>
-                <p class="text-muted">Registrados en el sistema</p>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Clínica UVG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-hospital me-2"></i> Clínica UVG
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reportes">
+                            <i class="bi bi-graph-up me-1"></i> Reportes
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <span class="navbar-text text-white">
+                        <i class="bi bi-calendar-check me-1"></i>
+                        <span id="current-date"></span>
+                    </span>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Citas Hoy</h5>
-            </div>
-            <div class="card-body text-center">
-                <h3 id="citas-hoy" class="display-4">0</h3>
-                <p class="text-muted">Programadas para hoy</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Ingresos Mensuales</h5>
-            </div>
-            <div class="card-body text-center">
-                <h3 id="ingresos-mes" class="display-4">Q0.00</h3>
-                <p class="text-muted">Total este mes</p>
-            </div>
-        </div>
-    </div>
-</div>
+    </nav>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Últimos Pacientes</h5>
+    <!-- Contenido principal -->
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="bi bi-speedometer2 me-2"></i> Panel de Control</h2>
+                <p class="text-muted">Resumen general de la clínica</p>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover" id="tabla-pacientes">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Fecha Registro</th>
-                                <th>Edad</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+        </div>
+
+        <!-- Tarjetas de resumen -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card card-counter h-100 border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted mb-2">Total Pacientes</h6>
+                                <h2 class="count-numbers mb-0" id="total-pacientes">0</h2>
+                            </div>
+                            <i class="bi bi-people-fill text-primary"></i>
+                        </div>
+                        <p class="text-muted mb-0 mt-2">
+                            <span class="text-success me-2"><i class="bi bi-arrow-up"></i> 12%</span>
+                            <span>último mes</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card card-counter h-100 border-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted mb-2">Citas Hoy</h6>
+                                <h2 class="count-numbers mb-0" id="citas-hoy">0</h2>
+                            </div>
+                            <i class="bi bi-calendar-check text-success"></i>
+                        </div>
+                        <p class="text-muted mb-0 mt-2">
+                            <span class="text-danger me-2"><i class="bi bi-arrow-down"></i> 5%</span>
+                            <span>vs. ayer</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card card-counter h-100 border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase text-muted mb-2">Ingresos Mensuales</h6>
+                                <h2 class="count-numbers mb-0" id="ingresos-mes">Q0.00</h2>
+                            </div>
+                            <i class="bi bi-cash-stack text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-0 mt-2">
+                            <span class="text-success me-2"><i class="bi bi-arrow-up"></i> 18%</span>
+                            <span>vs. mes pasado</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tablas y gráficos -->
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Últimos Pacientes</h5>
+                        <a href="/pacientes" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="tabla-pacientes">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Fecha Registro</th>
+                                        <th>Edad</th>
+                                        <th>Género</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Próximas Citas</h5>
+                        <a href="/citas" class="btn btn-sm btn-outline-primary">Ver todas</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="tabla-citas">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Médico</th>
+                                        <th>Fecha/Hora</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Próximas Citas</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover" id="tabla-citas">
-                        <thead>
-                            <tr>
-                                <th>Paciente</th>
-                                <th>Médico</th>
-                                <th>Fecha/Hora</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="/static/js/app.js"></script>
-<script>
-$(document).ready(function() {
-    // Cargar datos del dashboard
-    $.get('/api/reporte1', function(data) {
-        const total = data.data.reduce((a, b) => a + b, 0);
-        $('#total-pacientes').text(total);
-    });
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    $.get('/api/reporte2', {
-        fecha_inicio: new Date().toISOString().split('T')[0],
-        fecha_fin: new Date().toISOString().split('T')[0],
-        estado: 'programada'
-    }, function(data) {
-        const total = data.datasets.reduce((sum, dataset) => sum + dataset.data.reduce((a, b) => a + b, 0), 0);
-        $('#citas-hoy').text(total);
-    });
-    
-    // Configurar tablas
-    $('#tabla-pacientes').DataTable({
-        ajax: '/api/reporte1?limit=5',
-        columns: [
-            { data: 'nombre' },
-            { data: 'fecha_registro' },
-            { data: 'edad' }
-        ],
-        order: [[1, 'desc']]
-    });
-    
-    $('#tabla-citas').DataTable({
-        ajax: '/api/reporte2?limit=5',
-        columns: [
-            { data: 'paciente' },
-            { data: 'medico' },
-            { data: 'fecha_hora' }
-        ],
-        order: [[2, 'asc']]
-    });
-});
-</script>
-{% endblock %}
+    <!-- Nuestros scripts -->
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/datatables-config.js"></script>
+</body>
+</html>
