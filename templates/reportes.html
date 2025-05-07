@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="report-title">Reportes Clínicos</h2>
+        <p class="text-muted">Seleccione un reporte para visualizar los datos</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="list-group">
+            <button class="list-group-item list-group-item-action report-btn active" data-report="1">
+                <i class="bi bi-people-fill me-2"></i>Pacientes por género
+            </button>
+            <button class="list-group-item list-group-item-action report-btn" data-report="2">
+                <i class="bi bi-calendar-check me-2"></i>Citas por médico
+            </button>
+            <button class="list-group-item list-group-item-action report-btn" data-report="3">
+                <i class="bi bi-cash-stack me-2"></i>Ingresos por concepto
+            </button>
+            <button class="list-group-item list-group-item-action report-btn" data-report="4">
+                <i class="bi bi-clipboard2-pulse me-2"></i>Diagnósticos comunes
+            </button>
+            <button class="list-group-item list-group-item-action report-btn" data-report="5">
+                <i class="bi bi-clipboard2-plus me-2"></i>Exámenes realizados
+            </button>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <!-- Filtros del reporte -->
+        <div class="filter-section">
+            <h5 id="report-title-1" class="d-none">Pacientes por género</h5>
+            <h5 id="report-title-2" class="d-none">Citas por médico y estado</h5>
+            <h5 id="report-title-3" class="d-none">Ingresos por concepto</h5>
+            <h5 id="report-title-4" class="d-none">Diagnósticos más comunes</h5>
+            <h5 id="report-title-5" class="d-none">Exámenes realizados</h5>
+            
+            <form id="report-form-1" class="report-form">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="fecha-inicio-1" class="form-label">Fecha Inicio</label>
+                        <input type="date" class="form-control date-input" id="fecha-inicio-1" name="fecha_inicio">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="fecha-fin-1" class="form-label">Fecha Fin</label>
+                        <input type="date" class="form-control date-input" id="fecha-fin-1" name="fecha_fin">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="min-edad-1" class="form-label">Edad Mín</label>
+                        <input type="number" class="form-control" id="min-edad-1" name="min_edad" value="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="max-edad-1" class="form-label">Edad Máx</label>
+                        <input type="number" class="form-control" id="max-edad-1" name="max_edad" value="120">
+                    </div>
+                </div>
+                <div class="mt-3 text-end">
+                    <button type="button" class="btn btn-primary" onclick="loadReport(1)">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
+                </div>
+            </form>
+            
+            <form id="report-form-2" class="report-form d-none">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="fecha-inicio-2" class="form-label">Fecha Inicio</label>
+                        <input type="date" class="form-control date-input" id="fecha-inicio-2" name="fecha_inicio">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fecha-fin-2" class="form-label">Fecha Fin</label>
+                        <input type="date" class="form-control date-input" id="fecha-fin-2" name="fecha_fin">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="medico-2" class="form-label">Médico</label>
+                        <select class="form-select medico-select" id="medico-2" name="medico_id">
+                            <option value="%">Todos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="estado-2" class="form-label">Estado</label>
+                        <select class="form-select" id="estado-2" name="estado">
+                            <option value="%">Todos</option>
+                            <option value="programada">Programada</option>
+                            <option value="completada">Completada</option>
+                            <option value="cancelada">Cancelada</option>
+                            <option value="no_asistio">No Asistió</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3 text-end">
+                    <button type="button" class="btn btn-primary" onclick="loadReport(2)">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Formularios para otros reportes (similares) -->
+        </div>
+        
+        <!-- Contenedor del reporte -->
+        <div id="report-container-1" class="card p-3"></div>
+        <div id="report-container-2" class="card p-3 d-none"></div>
+        <div id="report-container-3" class="card p-3 d-none"></div>
+        <div id="report-container-4" class="card p-3 d-none"></div>
+        <div id="report-container-5" class="card p-3 d-none"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/reportes.js"></script>
+{% endblock %}
