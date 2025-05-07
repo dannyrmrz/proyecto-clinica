@@ -1,0 +1,373 @@
+from flask import Flask, render_template, jsonify, request, send_file
+import psycopg2
+from psycopg2 import sql
+from datetime import datetime
+import csv
+from io import StringIO
+from fpdf import FPDF
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+
+app = Flask(__name__)
+
+# Configuración de la base de datos
+DB_CONFIG = {
+    'host': 'localhost',
+    'database': 'clinica_pacientes',
+    'user': 'postgres',
+    'password': 'postgres'
+}
+
+def get_db_connection():
+    conn = psycopg2.connect(**DB_CONFIG)
+    return conn
+
+@app.route('/')
+def home():
+    return render_template('dashboard.html')
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/reportes')
+def reportes():
+    return render_template('reportes.html')
+
+
+@app.route('/api/reporte1', methods=['GET'])
+def reporte1():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    params = {
+        'fecha_inicio': request.args.get('fecha_inicio', '1900-01-01'),
+        'fecha_fin': request.args.get('fecha_fin', '2100-01-01'),
+        'min_edad': request.args.get('min_edad', 0),
+        'max_edad': request.args.get('max_edad', 120)
+    }
+    
+    query = sql.SQL("""
+        SELECT genero, COUNT(*) as cantidad
+        FROM pacientes
+        WHERE fecha_registro BETWEEN %(fecha_inicio)s AND %(fecha_fin)s
+        AND EXTRACT(YEAR FROM AGE(fecha_nacimiento)) BETWEEN %(min_edad)s AND %(max_edad)s
+        GROUP BY genero
+    """)
+    
+    cur.execute(query, params)
+    results = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    return jsonify({
+        'labels': [row[0] for row in results],
+        'data': [row[1] for row in results],
+        'type': 'pie'
+    })
+
+
+@app.route('/api/reporte2', methods=['GET'])
+def reporte2():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    params = {
+        'fecha_inicio': request.args.get('fecha_inicio', '1900-01-01'),
+        'fecha_fin': request.args.get('fecha_fin', '2100-01-01'),
+        'medico_id': request.args.get('medico_id', '%'),
+        'estado': request.args.get('estado', '%')
+    }
+    
+    query = sql.SQL("""
+        SELECT m.nombre || ' ' || m.apellido as medico, c.estado, COUNT(*) as cantidad
+        FROM citas c
+        JOIN medicos m ON c.id_medico = m.id_medico
+        WHERE c.fecha_hora BETWEEN %(fecha_inicio)s AND %(fecha_fin)s
+        AND c.id_medico::TEXT LIKE %(medico_id)s
+        AND c.estado LIKE %(estado)s
+        GROUP BY m.nombre, m.apellido, c.estado
+        ORDER BY medico, estado
+    """)
+    
+    cur.execute(query, params)
+    results = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    medicos = sorted(list(set([row[0] for row in results])))
+    estados = sorted(list(set([row[1] for row in results])))
+    
+    datasets = []
+    for estado in estados:
+        data = []
+        for medico in medicos:
+            count = next((row[2] for row in results if row[0] == medico and row[1] == estado), 0)
+            data.append(count)
+        datasets.append({
+            'label': estado,
+            'data': data
+        })
+    
+    return jsonify({
+        'labels': medicos,
+        'datasets': datasets,
+        'type': 'bar'
+    })
+
+
+@app.route('/api/reporte3', methods=['GET'])
+def reporte3():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    params = {
+        'fecha_inicio': request.args.get('fecha_inicio', '1900-01-01'),
+        'fecha_fin': request.args.get('fecha_fin', '2100-01-01'),
+        'min_monto': request.args.get('min_monto', 0),
+        'max_monto': request.args.get('max_monto', 1000000),
+        'tipo_concepto': request.args.get('tipo_concepto', '%')
+    }
+    
+    query = sql.SQL("""
+        SELECT 
+            fd.tipo_concepto,
+            DATE_TRUNC('month', f.fecha_emision) as mes,
+            SUM(fd.subtotal) as total
+        FROM facturas_detalles fd
+        JOIN facturas f ON fd.id_factura = f.id_factura
+        WHERE f.fecha_emision BETWEEN %(fecha_inicio)s AND %(fecha_fin)s
+        AND fd.subtotal BETWEEN %(min_monto)s AND %(max_monto)s
+        AND fd.tipo_concepto LIKE %(tipo_concepto)s
+        GROUP BY fd.tipo_concepto, mes
+        ORDER BY mes, fd.tipo_concepto
+    """)
+    
+    cur.execute(query, params)
+    results = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    meses = sorted(list(set([row[1].strftime('%Y-%m') for row in results])))
+    conceptos = sorted(list(set([row[0] for row in results])))
+    
+    datasets = []
+    for concepto in conceptos:
+        data = []
+        for mes in meses:
+            total = next((float(row[2]) for row in results if row[0] == concepto and row[1].strftime('%Y-%m') == mes), 0)
+            data.append(total)
+        datasets.append({
+            'label': concepto,
+            'data': data
+        })
+    
+    return jsonify({
+        'labels': meses,
+        'datasets': datasets,
+        'type': 'line'
+    })
+
+
+@app.route('/api/reporte4', methods=['GET'])
+def reporte4():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    params = {
+        'fecha_inicio': request.args.get('fecha_inicio', '1900-01-01'),
+        'fecha_fin': request.args.get('fecha_fin', '2100-01-01'),
+        'min_edad': request.args.get('min_edad', 0),
+        'max_edad': request.args.get('max_edad', 120),
+        'genero': request.args.get('genero', '%')
+    }
+    
+    query = sql.SQL("""
+        SELECT 
+            SUBSTRING(d.diagnostico FROM 1 FOR 30) as diagnostico,
+            COUNT(*) as cantidad
+        FROM diagnosticos d
+        JOIN historiales_medicos hm ON d.id_historial = hm.id_historial
+        JOIN pacientes p ON hm.id_paciente = p.id_paciente
+        WHERE d.fecha_diagnostico BETWEEN %(fecha_inicio)s AND %(fecha_fin)s
+        AND EXTRACT(YEAR FROM AGE(p.fecha_nacimiento)) BETWEEN %(min_edad)s AND %(max_edad)s
+        AND p.genero LIKE %(genero)s
+        GROUP BY diagnostico
+        ORDER BY cantidad DESC
+        LIMIT 10
+    """)
+    
+    cur.execute(query, params)
+    results = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    return jsonify({
+        'labels': [row[0] for row in results],
+        'data': [row[1] for row in results],
+        'type': 'horizontalBar'
+    })
+
+
+@app.route('/api/reporte5', methods=['GET'])
+def reporte5():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    params = {
+        'fecha_inicio': request.args.get('fecha_inicio', '1900-01-01'),
+        'fecha_fin': request.args.get('fecha_fin', '2100-01-01'),
+        'min_costo': request.args.get('min_costo', 0),
+        'max_costo': request.args.get('max_costo', 10000),
+        'medico_id': request.args.get('medico_id', '%')
+    }
+    
+    query = sql.SQL("""
+        SELECT 
+            e.nombre,
+            COUNT(*) as cantidad,
+            AVG(ep.costo_final) as costo_promedio,
+            SUM(ep.costo_final) as total
+        FROM examenes_pacientes ep
+        JOIN examenes e ON ep.id_examen = e.id_examen
+        WHERE ep.fecha_realizacion BETWEEN %(fecha_inicio)s AND %(fecha_fin)s
+        AND ep.costo_final BETWEEN %(min_costo)s AND %(max_costo)s
+        AND ep.id_medico::TEXT LIKE %(medico_id)s
+        GROUP BY e.nombre
+        ORDER BY cantidad DESC
+    """)
+    
+    cur.execute(query, params)
+    results = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    return jsonify({
+        'labels': [row[0] for row in results],
+        'datasets': [
+            {
+                'label': 'Cantidad realizados',
+                'data': [row[1] for row in results],
+                'type': 'bar',
+                'backgroundColor': 'rgba(54, 162, 235, 0.5)'
+            },
+            {
+                'label': 'Costo promedio',
+                'data': [float(row[2]) for row in results],
+                'type': 'line',
+                'borderColor': 'rgba(255, 99, 132, 1)',
+                'backgroundColor': 'rgba(255, 99, 132, 0.1)',
+                'yAxisID': 'y1'
+            }
+        ],
+        'type': 'combo'
+    })
+
+
+@app.route('/api/medicos', methods=['GET'])
+def get_medicos():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT id_medico, nombre, apellido FROM medicos ORDER BY apellido, nombre")
+    results = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+    
+    medicos = [{'id': row[0], 'nombre': f"{row[1]} {row[2]}"} for row in results]
+    return jsonify(medicos)
+
+@app.route('/api/export_csv', methods=['POST'])
+def export_csv():
+    data = request.json
+    report_id = data.get('report_id')
+    
+    # Crear un archivo CSV en memoria
+    si = StringIO()
+    cw = csv.writer(si)
+    
+    # Obtener datos según el reporte
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    if report_id == '1':
+        cur.execute("""
+            SELECT id_paciente, nombre, apellido, genero, fecha_nacimiento, fecha_registro
+            FROM pacientes
+            ORDER BY fecha_registro DESC
+        """)
+        cw.writerow(['ID', 'Nombre', 'Apellido', 'Género', 'Fecha Nacimiento', 'Fecha Registro'])
+        
+    elif report_id == '2':
+        cur.execute("""
+            SELECT c.id_cita, p.nombre, p.apellido, m.nombre, m.apellido, c.fecha_hora, c.estado
+            FROM citas c
+            JOIN pacientes p ON c.id_paciente = p.id_paciente
+            JOIN medicos m ON c.id_medico = m.id_medico
+            ORDER BY c.fecha_hora DESC
+        """)
+        cw.writerow(['ID Cita', 'Nombre Paciente', 'Apellido Paciente', 'Nombre Médico', 'Apellido Médico', 'Fecha/Hora', 'Estado'])
+    
+    # Escribir resultados
+    for row in cur.fetchall():
+        cw.writerow(row)
+    
+    cur.close()
+    conn.close()
+    
+    output = si.getvalue()
+    return jsonify({'csv': output})
+
+@app.route('/api/export_pdf', methods=['POST'])
+def export_pdf():
+    data = request.json
+    report_id = data.get('report_id')
+    chart_data = data.get('chart_data')
+    
+    # Crear PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # Título
+    pdf.cell(200, 10, txt=f"Reporte {report_id}", ln=1, align='C')
+    
+    # Generar imagen del gráfico
+    plt.figure(figsize=(8, 4))
+    
+    if chart_data['type'] == 'pie':
+        plt.pie(chart_data['data'], labels=chart_data['labels'], autopct='%1.1f%%')
+    elif chart_data['type'] == 'bar':
+        plt.bar(chart_data['labels'], chart_data['data'])
+    elif chart_data['type'] == 'line':
+        for dataset in chart_data['datasets']:
+            plt.plot(chart_data['labels'], dataset['data'], label=dataset['label'])
+        plt.legend()
+    
+    plt.title(f"Reporte {report_id}")
+    img_path = f"static/img/chart_{report_id}.png"
+    plt.savefig(img_path)
+    plt.close()
+    
+    # Agregar imagen al PDF
+    pdf.image(img_path, x=10, y=30, w=180)
+    
+    # Guardar PDF
+    pdf_path = f"static/pdf/reporte_{report_id}.pdf"
+    pdf.output(pdf_path)
+    
+    return jsonify({'pdf_url': f"/{pdf_path}"})
+
+if __name__ == '__main__':
+    if not os.path.exists('static/img'):
+        os.makedirs('static/img')
+    if not os.path.exists('static/pdf'):
+        os.makedirs('static/pdf')
+    app.run(debug=True)
