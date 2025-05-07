@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Total de Pacientes</h5>
+            </div>
+            <div class="card-body text-center">
+                <h3 id="total-pacientes" class="display-4">0</h3>
+                <p class="text-muted">Registrados en el sistema</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Citas Hoy</h5>
+            </div>
+            <div class="card-body text-center">
+                <h3 id="citas-hoy" class="display-4">0</h3>
+                <p class="text-muted">Programadas para hoy</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Ingresos Mensuales</h5>
+            </div>
+            <div class="card-body text-center">
+                <h3 id="ingresos-mes" class="display-4">Q0.00</h3>
+                <p class="text-muted">Total este mes</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Últimos Pacientes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabla-pacientes">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Fecha Registro</th>
+                                <th>Edad</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Próximas Citas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabla-citas">
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Médico</th>
+                                <th>Fecha/Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+$(document).ready(function() {
+    // Cargar datos del dashboard
+    $.get('/api/reporte1', function(data) {
+        const total = data.data.reduce((a, b) => a + b, 0);
+        $('#total-pacientes').text(total);
+    });
+    
+    $.get('/api/reporte2', {
+        fecha_inicio: new Date().toISOString().split('T')[0],
+        fecha_fin: new Date().toISOString().split('T')[0],
+        estado: 'programada'
+    }, function(data) {
+        const total = data.datasets.reduce((sum, dataset) => sum + dataset.data.reduce((a, b) => a + b, 0), 0);
+        $('#citas-hoy').text(total);
+    });
+    
+    // Configurar tablas
+    $('#tabla-pacientes').DataTable({
+        ajax: '/api/reporte1?limit=5',
+        columns: [
+            { data: 'nombre' },
+            { data: 'fecha_registro' },
+            { data: 'edad' }
+        ],
+        order: [[1, 'desc']]
+    });
+    
+    $('#tabla-citas').DataTable({
+        ajax: '/api/reporte2?limit=5',
+        columns: [
+            { data: 'paciente' },
+            { data: 'medico' },
+            { data: 'fecha_hora' }
+        ],
+        order: [[2, 'asc']]
+    });
+});
+</script>
+{% endblock %}
