@@ -146,11 +146,10 @@ SELECT
         WHEN random() < 0.7 THEN 'Resultados dentro de rangos normales'
         ELSE 'Resultados anormales, requiere seguimiento'
     END,
-    e.costo * (0.9 + random() * 0.2) -- Variación de +/- 10% en el costo
+    e.costo * (0.9 + random() * 0.2) 
 FROM pacientes p
 CROSS JOIN examenes e
-WHERE random() < 0.3; -- 30% de probabilidad de que un paciente tenga un examen
-
+WHERE random() < 0.3; 
 -- Insertar facturas (para pacientes con citas completadas)
 INSERT INTO facturas (id_paciente, estado)
 SELECT DISTINCT p.id_paciente, 
